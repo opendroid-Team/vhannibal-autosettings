@@ -3,7 +3,7 @@
 	<eLabel position="10,0" size="1,45"   backgroundColor="#20202020" zPosition="0" />
 	<eLabel position="10,0" size="865,1"  backgroundColor="#20202020" zPosition="0" />
 
-	<ePixmap position="762,410" size="250,170" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/NGsetting/Panel/logo.png" zPosition="5" alphatest="blend" />	
+	<ePixmap position="762,405" size="250,170" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/NGsetting/Panel/logo.png" zPosition="5" alphatest="blend" />	
 	<ePixmap position="330,4" size="300,40" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/NGsetting/Panel/autosetting.png" zPosition="2" alphatest="blend" />	
 	
 	<!-- Text Maintain -->	
