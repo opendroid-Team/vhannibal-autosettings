@@ -386,10 +386,10 @@ class NgSetting:
                 self.iTimer1 = eTimer()
                 self.iTimer2 = eTimer()
                 self.iTimer3 = eTimer()
+                self.Message = eTimer()
                 self.iTimer1.callback.append(self.startTimerSetting)
                 self.iTimer2.callback.append(self.startTimerSetting)
                 self.iTimer3.callback.append(self.startTimerSetting)
-
         def gotSession(self, session):
                 self.session = session
                 AutoTimer, NameSat, Data, Type, Personal, DowDate = Load()
@@ -459,6 +459,7 @@ class NgSetting:
                                                         WriteSave(name, AutoTimer, Type, date, Personal, DowDate)
                                                         eDVBDB.getInstance().reloadServicelist()
                                                         eDVBDB.getInstance().reloadBouquets()
+                                                        from Screens.MessageBox import MessageBox
                                                         self.session.open(MessageBox, _('New Setting Vhannibal') + name + _(' of ') + ConverDate(date) + _(' updated'), MessageBox.TYPE_INFO, timeout=5)
                                                 else:
                                                         self.session.open(MessageBox, _('Sorry!\nError Download Setting'), MessageBox.TYPE_ERROR, timeout=5)
