@@ -386,10 +386,11 @@ class NgSetting:
                 self.iTimer1 = eTimer()
                 self.iTimer2 = eTimer()
                 self.iTimer3 = eTimer()
-                self.Message = eTimer()
+                self.iTimer4 = eTimer()
                 self.iTimer1.callback.append(self.startTimerSetting)
                 self.iTimer2.callback.append(self.startTimerSetting)
                 self.iTimer3.callback.append(self.startTimerSetting)
+                self.iTimer4.callback.append(self.StopMessage)
         def gotSession(self, session):
                 self.session = session
                 AutoTimer, NameSat, Data, Type, Personal, DowDate = Load()
@@ -436,17 +437,28 @@ class NgSetting:
                 self.iTimer2.start(1000 * delta2, True)
                 self.iTimer3.start(1000 * delta3, True)
 
+        def StopMessage(self):
+                try:
+                        self.iTimer4.stop()
+                except:
+                        pass
+                self.iScreenMessage.Messageinfo.hide()
+        def StartMessage(self):
+                self.iScreenMessage = ScreenMessage()
+                self.iScreenMessage.gotSession(self.session)
+                self.iScreenMessage.Messageinfo.show()
         def startTimerSetting(self, Auto = False):
+                global MyMessage
                 AutoTimer, NameSat, Data, Type, Personal, DowDate = Load()
 
-                def OnDsl():
-                        try:
-                                urllib2.urlopen('http://www.google.it', None, 3)
-                                return True
-                        except:
-                                return False
+        def OnDsl():
+                try:
+                        urllib2.urlopen('http://www.google.it', None, 3)
+                        return True
+                except:
+                        return False
 
-                        return
+                return
 
                 if OnDsl():
                         for date, name, link in DownloadSetting():
@@ -459,10 +471,13 @@ class NgSetting:
                                                         WriteSave(name, AutoTimer, Type, date, Personal, DowDate)
                                                         eDVBDB.getInstance().reloadServicelist()
                                                         eDVBDB.getInstance().reloadBouquets()
-                                                        from Screens.MessageBox import MessageBox
-                                                        self.session.open(MessageBox, _('New Setting Vhannibal') + name + _(' of ') + ConverDate(date) + _(' updated'), MessageBox.TYPE_INFO, timeout=5)
-                                                else:
-                                                        self.session.open(MessageBox, _('Sorry!\nError Download Setting'), MessageBox.TYPE_ERROR, timeout=5)
-                                        break
+                                                        MyMessage = _('New Setting Vhannibal') + name + _(' of ') + ConverDate(date) + _(' updated')
+                                        else:
+                                                        MyMessage = _('Sorry!\nError Download Setting')
 
+                                break
+
+                self.StartMessage()
+                self.iTimer4.start(1800, True)
+                self.TimerSetting()
                 self.TimerSetting()
