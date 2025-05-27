@@ -1,5 +1,6 @@
 from random import choice
 import re
+import requests
 import os
 import sys
 from urllib.request import urlopen, Request
@@ -22,24 +23,30 @@ def ConverDate_noyear(data):
 
 def DownloadSetting():
     result = []
-    try:
-        import requests
-        response = requests.get('http://www.vhannibal.net/asd.php', headers={'User-Agent': 'Mozilla/5.0'})
-        html = response.text
-    except ImportError:
-        try:
-            req = Request('http://www.vhannibal.net/asd.php')
-            req.add_header('User-Agent', 'VAS14')
-            response = urlopen(req, timeout=3)
-            html = response.read().decode('utf-8', errors='ignore')
-        except Exception:
-            return result
-    except Exception:
-        return result
+    url = 'https://www.vhannibal.net/asd.php'
+    base_url = 'https://www.vhannibal.net/'
 
-    pattern = re.compile(r'<td><a href="(.+?)">(.+?)</a></td>.*?<td>(.+?)</td>', re.DOTALL)
+    try:
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+        response.encoding = "iso-8859-1"  # <-- NECESSARIO per decodificare correttamente
+        html = response.text
+
+        # Debug: salva HTML ricevuto
+        with open("/tmp/html_debug.txt", "w", encoding="utf-8") as f:
+            f.write(html)
+
+    except Exception as e:
+        with open("/tmp/html_debug.txt", "w", encoding="utf-8") as f:
+            f.write("Errore richiesta: " + str(e))
+        return []
+
+    # Parsing HTML
+    pattern = re.compile(r'<td><a href="([^"]+)">(.*?)</a></td>\s*<td>(\d+)</td>', re.DOTALL)
     for link, name, date in pattern.findall(html):
-        result.append((date, name.replace('Vhannibal ', ''), f"http://www.vhannibal.net/{link}"))
+        cleaned_name = name.replace('Vhannibal ', '').strip()
+        full_link = base_url + link.lstrip('/')
+        result.append((date.strip(), cleaned_name, full_link))
+
     return result
 
 def Load():
