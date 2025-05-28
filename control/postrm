@@ -2,7 +2,7 @@
 echo
 echo "A shell script which is executed after uninstallation of the package:"
 echo
-echo "Name: NGsetting for OE2.0"
+echo "Name: NGsetting for enigma2"
 echo
 echo "uninstall NGsetting ..."
 
