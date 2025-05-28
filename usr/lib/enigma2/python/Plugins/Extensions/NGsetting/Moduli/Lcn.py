@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
 from enigma import eDVBDB, eServiceReference, eServiceCenter
 from Screens.Screen import Screen
 from Screens.MessageBox import MessageBox
@@ -13,15 +11,42 @@ from .Config import *
 import os
 import sys
 import re
-import xml.etree.cElementTree as ET
+try:
+    from xml.etree.cElementTree import parse
+except ImportError:
+    from xml.etree.ElementTree import parse
+# NAME Digitale Terrestre
+plugin_path = os.path.dirname(sys.modules[__name__].__file__)
+rules = os.path.join(plugin_path, 'rules.xml')
+
+
+def ReloadBouquets():
+    print('\n----Reloading bouquets----\n')
+    try:
+        from enigma import eDVBDB
+    except ImportError:
+        eDVBDB = None
+    if eDVBDB:
+        db = eDVBDB.getInstance()
+        if db:
+            db.reloadServicelist()
+            db.reloadBouquets()
+            print("eDVBDB: bouquets reloaded...")
+    else:
+        os.system("wget -qO - http://127.0.0.1/web/servicelistreload?mode=2 > /dev/null 2>&1 &")
+        os.system("wget -qO - http://127.0.0.1/web/servicelistreload?mode=4 > /dev/null 2>&1 &")
+        print("wGET: bouquets reloaded...")
+
 
 def Bouquet():
-    for file in os.listdir('/etc/enigma2/'):
+    for file in os.listdir("/etc/enigma2/"):
         if re.search('^userbouquet.*.tv', file):
-            f = open('/etc/enigma2/' + file, 'r')
+            f = open("/etc/enigma2/" + file, "r")
             x = f.read()
-            if re.search('#NAME Digitale Terrestre', x, flags=re.IGNORECASE):
-                return '/etc/enigma2/' + file
+            if re.search("#NAME Digitale Terrestre", x, flags=re.IGNORECASE):
+                return "/etc/enigma2/" + file
+    return
+
 
 class LCN:
     service_types_tv = '1:7:1:0:0:0:0:0:0:0:(type == 1) || (type == 17) || (type == 22) || (type == 25) || (type == 134) || (type == 195)'
@@ -32,10 +57,13 @@ class LCN:
         self.lcnlist = []
         self.markers = []
         self.e2services = []
-        mdom = ET.parse('/usr/lib/enigma2/python/Plugins/Extensions/NGsetting/Moduli/NGsetting/rules.xml')
+        mdom = parse('/usr/lib/enigma2/python/Plugins/Extensions/NGsetting/Moduli/NGsetting/rules.xml')
+        # with open(rules, 'rt') as f:
+            # mdom = ET()
+            # mdom.parse(f)
         self.root = None
         for x in mdom.getroot():
-            if x.tag == 'ruleset' and x.get('name') == 'Italy':
+            if x.tag == "ruleset" and x.get("name") == 'Italy':
                 self.root = x
                 return
         return
@@ -79,6 +107,7 @@ class LCN:
                 value = x[0]
                 cmd = "x[0] = " + rule
                 try:
+                    print('value:', value)
                     exec(cmd)
                 except Exception as e:
                     print(e)
@@ -110,11 +139,10 @@ class LCN:
                     if x.get("type") == "marker":
                         self.addMarker(int(x.get("position")), x.text)
         self.markers.sort(key=lambda z: int(z[0]))
-        return
 
     def readE2Services(self):
         self.e2services = []
-        refstr = '%s ORDER BY name' % self.service_types_tv
+        refstr = '%s ORDER BY name' % (self.service_types_tv)
         ref = eServiceReference(refstr)
         serviceHandler = eServiceCenter.getInstance()
         servicelist = serviceHandler.list(ref)
@@ -124,7 +152,7 @@ class LCN:
                 if not service.valid():
                     break
                 unsigned_orbpos = service.getUnsignedData(4) >> 16
-                if unsigned_orbpos == 61166:
+                if unsigned_orbpos == 0xEEEE or unsigned_orbpos == 61166:  # Terrestrial
                     self.e2services.append(service.toString())
         return
 
@@ -150,7 +178,7 @@ class LCN:
             for xx in LineMaker:
                 if i + 1 < len(LineMaker):
                     START = LineMaker[i]
-                    STOP = LineMaker[(i + 1)]
+                    STOP = LineMaker[i + 1]
                     if STOP - START < 3:
                         PosDelMaker.append(START)
                         PosDelMaker.append(START + 1)
@@ -178,10 +206,10 @@ class LCN:
                     f.write("#SERVICE 1:64:0:0:0:0:0:0:0:0:\n")
                     f.write("#DESCRIPTION ------- " + self.markers[0][1] + " -------\n")
                     self.markers.remove(self.markers[0])
-            refstr = "1:0:1:%x:%x:%x:%x:0:0:0:" % (x[4], x[3], x[2], x[1])
+            refstr = "1:0:1:%x:%x:%x:%x:0:0:0:" % (x[4], x[3], x[2], x[1])  # temporary ref
             refsplit = eServiceReference(refstr).toString().split(":")
             for tref in self.e2services:
-                tmp = tref.split(':')
+                tmp = tref.split(":")
                 if tmp[3] == refsplit[3] and tmp[4] == refsplit[4] and tmp[5] == refsplit[5] and tmp[6] == refsplit[6]:
                     f.write("#SERVICE " + tref + "\n")
                     break
@@ -189,4 +217,4 @@ class LCN:
         self.ClearDoubleMarker(self.bouquetfile)
 
     def reloadBouquets(self):
-        eDVBDB.getInstance().reloadBouquets()
+        ReloadBouquets()
